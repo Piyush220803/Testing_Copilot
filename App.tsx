@@ -1,130 +1,268 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
 import React from 'react';
-import type {PropsWithChildren} from 'react';
 import {
-  ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
+  Image,
+  ScrollView,
+  SafeAreaView,
+  StatusBar,
+  Platform,
+  TouchableOpacity,
 } from 'react-native';
-
 import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+  CopilotProvider,
+  useCopilot,
+  CopilotStep,
+  walkthroughable,
+} from 'react-native-copilot';
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+const WalkthroughableView = walkthroughable(View);
+const WalkthroughableText = walkthroughable(Text);
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
+const Navbar = () => (
+  <View style={styles.navbar}>
+    <Text style={styles.navbarLogo}>MyApp</Text>
+    <View style={styles.navLinks}>
+      <Text style={styles.navLink}>Home</Text>
+      <Text style={styles.navLink}>About</Text>
     </View>
-  );
-}
+  </View>
+);
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+const HeroSection = () => (
+  <View style={styles.heroSection}>
+    <Image
+      source={{uri: 'https://picsum.photos/800/400'}}
+      style={styles.heroImage}
+    />
+    <View style={styles.heroOverlay}>
+      <Text style={styles.heroTitle}>Welcome to Our App</Text>
+    </View>
+  </View>
+);
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+const Footer = () => (
+  <View style={styles.footer}>
+    <Text style={styles.footerText}>© 2025 MyApp. All rights reserved.</Text>
+  </View>
+);
 
-  /*
-   * To keep the template simple and small we're adding padding to prevent view
-   * from rendering under the System UI.
-   * For bigger apps the recommendation is to use `react-native-safe-area-context`:
-   * https://github.com/AppAndFlow/react-native-safe-area-context
-   *
-   * You can read more about it here:
-   * https://github.com/react-native-community/discussions-and-proposals/discussions/827
-   */
-  const safePadding = '5%';
+// Tooltip Component
+const CustomTooltip = ({handleNext, currentStep}) => (
+  <View style={styles.tooltip}>
+    <Text style={styles.tooltipText}>{currentStep?.text}</Text>
+    <TouchableOpacity
+      onPress={() => {
+        console.log('Next button pressed');
+        handleNext && handleNext();
+      }}
+      style={styles.tooltipButton}
+      activeOpacity={0.8}>
+      <Text style={styles.tooltipButtonText}>Next</Text>
+    </TouchableOpacity>
+  </View>
+);
+
+const AppContent = () => {
+  const {start, copilotEvents} = useCopilot();
+
+  React.useEffect(() => {
+    const handleStepChange = step => {
+      console.log('Step changed:', step);
+    };
+
+    const handleStart = () => {
+      console.log('Tour started');
+    };
+
+    const handleStop = () => {
+      console.log('Tour stopped');
+    };
+
+    copilotEvents.on('stepChange', handleStepChange);
+    copilotEvents.on('start', handleStart);
+    copilotEvents.on('stop', handleStop);
+
+    return () => {
+      copilotEvents.off('stepChange', handleStepChange);
+      copilotEvents.off('start', handleStart);
+      copilotEvents.off('stop', handleStop);
+    };
+  }, [copilotEvents]);
 
   return (
-    <View style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        style={backgroundStyle}>
-        <View style={{paddingRight: safePadding}}>
-          <Header/>
-        </View>
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-            paddingHorizontal: safePadding,
-            paddingBottom: safePadding,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView>
+        <View style={styles.container}>
+          <CopilotStep
+            text="This is our navigation bar"
+            order={1}
+            name="navbar">
+            <WalkthroughableView style={styles.stepContainer}>
+              <Navbar />
+            </WalkthroughableView>
+          </CopilotStep>
+
+          <CopilotStep
+            text="Here's our beautiful hero section"
+            order={2}
+            name="hero">
+            <WalkthroughableView style={styles.stepContainer}>
+              <HeroSection />
+            </WalkthroughableView>
+          </CopilotStep>
+
+          <CopilotStep text="Welcome to the app!" order={3} name="welcome">
+            <WalkthroughableText style={styles.welcomeText}>
+              Hello, Welcome to our App!
+            </WalkthroughableText>
+          </CopilotStep>
+
+          <TouchableOpacity style={styles.startButton} onPress={() => start()}>
+            <Text style={styles.startButtonText}>Start Tour</Text>
+          </TouchableOpacity>
+
+          <CopilotStep text="Our footer section" order={4} name="footer">
+            <WalkthroughableView style={styles.stepContainer}>
+              <Footer />
+            </WalkthroughableView>
+          </CopilotStep>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
-}
+};
+
+// Root Component
+const App = () => (
+  <CopilotProvider
+    tooltipComponent={CustomTooltip}
+    overlay="view"
+    animated={true}
+    backdropColor="rgba(0, 0, 0, 0.4)"
+    androidStatusBarVisible={false}
+    tooltipStyle={{
+      backgroundColor: 'rgba(44, 62, 80, 0.95)',
+    }}
+    labels={{
+      next: 'Next',
+    }}>
+    <AppContent />
+  </CopilotProvider>
+);
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0,
   },
-  sectionTitle: {
+  container: {
+    flex: 1,
+  },
+  stepContainer: {
+    marginBottom: 10,
+    width: '100%',
+  },
+  navbar: {
+    height: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    backgroundColor: '#2c3e50',
+  },
+  navbarLogo: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  navLinks: {
+    flexDirection: 'row',
+  },
+  navLink: {
+    color: '#fff',
+    marginLeft: 16,
+  },
+  heroSection: {
+    height: 200,
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  heroTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  welcomeText: {
     fontSize: 24,
-    fontWeight: '600',
+    textAlign: 'center',
+    margin: 20,
   },
-  sectionDescription: {
-    marginTop: 8,
+  startButton: {
+    backgroundColor: '#2c3e50',
+    padding: 15,
+    borderRadius: 30,
+    margin: 20,
+    alignItems: 'center',
+  },
+  startButtonText: {
+    color: '#fff',
     fontSize: 18,
-    fontWeight: '400',
+    fontWeight: 'bold',
   },
-  highlight: {
-    fontWeight: '700',
+  footer: {
+    padding: 20,
+    backgroundColor: '#2c3e50',
+    alignItems: 'center',
+  },
+  footerText: {
+    color: '#fff',
+  },
+  tooltip: {
+    backgroundColor: 'rgba(44, 62, 80, 0.95)',
+    borderRadius: 10,
+    padding: 15,
+    width: 250,
+    maxWidth: '80%',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    zIndex: 999,
+  },
+  tooltipText: {
+    color: '#fff',
+    fontSize: 14,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  tooltipButton: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 20,
+    alignSelf: 'center',
+    minWidth: 100,
+    minHeight: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tooltipButtonText: {
+    color: '#2c3e50',
+    fontWeight: 'bold',
   },
 });
 
